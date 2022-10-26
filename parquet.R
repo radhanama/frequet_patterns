@@ -7,3 +7,4 @@ download.file(file_url, destfile =  tf)
 df <- read_parquet(tf)
 head(df)
 
+realengo <- df[LINE == "383.0"]
