@@ -15,7 +15,25 @@ if(!require('chron')) {
   library('chron')
 }
 
-##Download File.
+func <- function(v){
+  if(5<=v && v<9){
+    return("early morning")
+  }else if(9<=v && v<11){
+    return("mid-morning")
+  }else if(11<=v && v<13){
+    return("late morning")
+  }else if(13<=v && v<17){
+    return("afternoon")
+  }else if(17<=v && v<20){
+    return("early evening")
+  }else if(20<=v && v<23){
+    return("late evening")
+  }else{
+    return("night")
+  }
+}
+
+## Download File.
 file_url <- "https://mapmob.eic.cefet-rj.br/data/busdata/database/G1-2022-01-01.parquet"
 tf <- "data.parquet"
 download.file(file_url, destfile =  tf)
@@ -23,7 +41,7 @@ df <- read_parquet(tf)
 head(df)
 df
 
-##Discretizing date and time.
+## Discretizing date and time.
 dtimes = df$DATE
 dtparts = t(as.data.frame(strsplit(dtimes,' ')))
 row.names(dtparts) = NULL
@@ -32,12 +50,17 @@ df$year <- cut(thetimes, "year")
 df$month <- cut(thetimes, "month")
 df$day <- cut(thetimes, "day")
 df$weekdays <- weekdays(thetimes)
-df$hours <- hours(thetimes)
-df$minutes <- minutes(thetimes)
-df$seconds <- seconds(thetimes)
+df$time <- mapply(func, hours(thetimes))
 
+## calculate velocity.
+
+
+## division of areas.
+
+
+## Select Data
 td <- df["year","day"]
 
-##Apriori.
+## Apriori.
 rules <- apriori(df,parameter = list(supp = 0.5, conf = 0.9, target = "rules"))
 summary(rules)
