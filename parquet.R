@@ -14,6 +14,10 @@ if(!require('chron')) {
   install.packages('chron')
   library('chron')
 }
+if(!require('dplyr')) {
+  install.packages('dplyr')
+  library("dplyr")
+}
 
 func <- function(v){
   if(5<=v && v<9){
@@ -59,8 +63,9 @@ df$time <- mapply(func, hours(thetimes))
 
 
 ## Select Data
-td <- df["year","day"]
+td <- df[,c("year","month","day", "LINE","VELOCITY", "REGIAO_ADM", "CODBAIRRO")]
 
 ## Apriori.
-rules <- apriori(df,parameter = list(supp = 0.5, conf = 0.9, target = "rules"))
-summary(rules)
+rulesWithParameters <- apriori(td, parameter = list(sup = 0.6, conf = 0.8))
+rules <- apriori(td)
+inspect(rules)
