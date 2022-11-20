@@ -19,7 +19,25 @@ if(!require('dplyr')) {
   library("dplyr")
 }
 
-func <- function(v){
+rangeVelocity <- function(v){
+  if(v==0){
+    return("parado")
+  }else if(0<v && v<20){
+    return("muito lento")
+  }else if(20<=v && v<40){
+    return("normal lento")
+  }else if(40<=v && v<60){
+    return("poco lento")
+  }else if(60<=v && v<80){
+    return("normal")
+  }else if(80<=v && v<110){
+    return("rapido")
+  }else{
+    return("muito rapido")
+  }
+}
+
+rangeTimeOfDay <- function(v){
   if(5<=v && v<9){
     return("early morning")
   }else if(9<=v && v<11){
@@ -42,19 +60,17 @@ file_url <- "https://mapmob.eic.cefet-rj.br/data/busdata/database/G1-2022-01-01.
 tf <- "data.parquet"
 download.file(file_url, destfile =  tf)
 df <- read_parquet(tf)
-head(df)
-df
 
 ## Discretizing date and time.
-dtimes = df$DATE
-dtparts = t(as.data.frame(strsplit(dtimes,' ')))
+dtparts = t(as.data.frame(strsplit(df$DATE,' ')))
 row.names(dtparts) = NULL
 thetimes = chron(dates=dtparts[,1],times=dtparts[,2],format=c('m-d-y','h:m:s'))
 df$year <- cut(thetimes, "year")
 df$month <- cut(thetimes, "month")
 df$day <- cut(thetimes, "day")
 df$weekdays <- weekdays(thetimes)
-df$time <- mapply(func, hours(thetimes))
+df$time <- mapply(rangeTimeOfDay, hours(thetimes))
+df$velocit <- mapply(rangeVelocity, df$VELOCITY)
 
 ## calculate velocity.
 
@@ -63,7 +79,7 @@ df$time <- mapply(func, hours(thetimes))
 
 
 ## Select Data
-td <- df[,c("year","month","day", "LINE","VELOCITY", "REGIAO_ADM", "CODBAIRRO")]
+td <- df[,c("year","month","day", "LINE","velocit", "REGIAO_ADM", "CODBAIRRO")]
 
 ## Apriori.
 rulesWithParameters <- apriori(td, parameter = list(sup = 0.6, conf = 0.8))
