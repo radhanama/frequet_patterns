@@ -18,6 +18,10 @@ if(!require('dplyr')) {
   install.packages('dplyr')
   library("dplyr")
 }
+if(!require('arulesViz')) {
+  install.packages('arulesViz')
+  library("arulesViz")
+}
 
 rangeVelocity <- function(v){
   if(v==0){
@@ -79,9 +83,10 @@ df$velocit <- mapply(rangeVelocity, df$VELOCITY)
 
 
 ## Select Data
-td <- df[,c("year","month","day", "LINE","velocit", "REGIAO_ADM", "CODBAIRRO")]
+td <- df[df$velocit != "parado",c("velocit", "REGIAO_ADM", "CODBAIRRO", "time")]
 
 ## Apriori.
-rulesWithParameters <- apriori(td, parameter = list(sup = 0.6, conf = 0.8))
+rulesWithParameters <- apriori(td, parameter = list(sup = 0.05, conf = 0.03))
 rules <- apriori(td)
-inspect(rules)
+inspect(rulesWithParameters)
+plot(rulesWithParameters) 
