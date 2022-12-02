@@ -29,11 +29,11 @@ rangeVelocity <- function(v){
   }else if(0<v && v<20){
     return("muito lento")
   }else if(20<=v && v<40){
-    return("normal lento")
+    return("lento")
   }else if(40<=v && v<60){
-    return("poco lento")
-  }else if(60<=v && v<80){
     return("normal")
+  }else if(60<=v && v<80){
+    return("pouco normal")
   }else if(80<=v && v<110){
     return("rapido")
   }else{
@@ -58,22 +58,35 @@ rangeTimeOfDay <- function(v){
     return("night")
   }
 }
+diretorio_busdata <- "data"
 
-## Download File.
-file_url <- "https://mapmob.eic.cefet-rj.br/data/busdata/database/G1-2022-01-01.parquet"
-tf <- "data.parquet"
-download.file(file_url, destfile =  tf)
-df <- read_parquet(tf)
+applysplt <- function(v){
+  dtparts <- strsplit(v,' ')
+  date <- chron(dates=dtparts[[1]][1],times=dtparts[[1]][2],format=c('m-d-y','h:m:s'))
+  return(date) 
+}
+
+diretorio_busdata <- "data"
+
+df <- list.files(diretorio_busdata) %>%
+  enframe(value = "arquivo") %>%
+  rowwise() %>%
+  mutate(
+    conteudo = list(str_glue("{diretorio_busdata}/{arquivo}") %>% read_parquet())
+  ) %>%
+  unnest(conteudo) %>%
+  janitor::clean_names()
+
 
 ## Discretizing date and time.
-dtparts = t(as.data.frame(strsplit(df$DATE,' ')))
-row.names(dtparts) = NULL
-thetimes = chron(dates=dtparts[,1],times=dtparts[,2],format=c('m-d-y','h:m:s'))
-df$year <- cut(thetimes, "year")
-df$month <- cut(thetimes, "month")
-df$day <- cut(thetimes, "day")
-df$weekdays <- weekdays(thetimes)
-df$time <- mapply(rangeTimeOfDay, hours(thetimes))
+df$date <- mapply(applysplt, df$DATE)
+df$year <- cut(df$date, "year")
+df$month <- cut(df$date, "month")
+df$day <- cut(df$date, "day")
+df$weekend <- is.weekend(df$date)
+df$weekdays <- weekdays(df$date)
+df$hour <- hours(df$date)
+df$time <- mapply(rangeTimeOfDay, hours(df$date))
 df$velocit <- mapply(rangeVelocity, df$VELOCITY)
 
 ## calculate velocity.
@@ -82,11 +95,13 @@ df$velocit <- mapply(rangeVelocity, df$VELOCITY)
 ## division of areas.
 
 
+##tentar identificar se é ida ou volta do onibus. se ele ta indo em direção a tal lugar ou o inverso
+# talvez a partir da continuidade da latitude e da longitude
+
 ## Select Data
-td <- df[df$velocit != "parado",c("velocit", "REGIAO_ADM", "CODBAIRRO", "time")]
+td <- df[df$velocit != "parado",c("velocit", "CODBAIRRO", "time", "weekdays")]
 
 ## Apriori.
-rulesWithParameters <- apriori(td, parameter = list(sup = 0.05, conf = 0.03))
+rulesWithParameters <- apriori(td, parameter = list(sup = 0.0005, conf = 0.8))
 rules <- apriori(td)
 inspect(rulesWithParameters)
-plot(rulesWithParameters) 
