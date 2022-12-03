@@ -13,9 +13,9 @@ data = str(result.content)
 
 x = re.findall("G1\-20[0-9\-]*\.parquet", data)[::-1]
 
-files_to_down = x[1:int(os.environ["filesAmount"])]
+files_to_down = x[1:int(os.environ["FilesAmount"])]
 
-with open(f'{os.environ["pathFiles"]}/files_to_down.json','w') as output:
+with open(f'{os.environ["FilesPath"]}/files_to_down.json','w') as output:
     output.write(json.dumps(files_to_down))
 
 for parquet in files_to_down:
