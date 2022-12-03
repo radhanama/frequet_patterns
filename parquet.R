@@ -1,3 +1,4 @@
+## import libraries
 if(!require('xml2')) {
   install.packages('xml2')
   library('xml2')
@@ -23,6 +24,7 @@ if(!require('arulesViz')) {
   library("arulesViz")
 }
 
+## function use to set ranges of velocity.
 rangeVelocity <- function(v){
   if(v==0){
     return("parado")
@@ -41,6 +43,7 @@ rangeVelocity <- function(v){
   }
 }
 
+## function use to set ranges of time
 rangeTimeOfDay <- function(v){
   if(5<=v && v<9){
     return("early morning")
@@ -58,16 +61,9 @@ rangeTimeOfDay <- function(v){
     return("night")
   }
 }
+
+## Charge data.
 diretorio_busdata <- "data"
-
-applysplt <- function(v){
-  dtparts <- strsplit(v,' ')
-  date <- chron(dates=dtparts[[1]][1],times=dtparts[[1]][2],format=c('m-d-y','h:m:s'))
-  return(date) 
-}
-
-diretorio_busdata <- "data"
-
 df <- list.files(diretorio_busdata) %>%
   enframe(value = "arquivo") %>%
   rowwise() %>%
@@ -77,31 +73,24 @@ df <- list.files(diretorio_busdata) %>%
   unnest(conteudo) %>%
   janitor::clean_names()
 
-
 ## Discretizing date and time.
-df$date <- mapply(applysplt, df$DATE)
-df$year <- cut(df$date, "year")
-df$month <- cut(df$date, "month")
-df$day <- cut(df$date, "day")
-df$weekend <- is.weekend(df$date)
-df$weekdays <- weekdays(df$date)
-df$hour <- hours(df$date)
-df$time <- mapply(rangeTimeOfDay, hours(df$date))
-df$velocit <- mapply(rangeVelocity, df$VELOCITY)
+dtparts = t(as.data.frame(strsplit(df$date,' ')))
+row.names(dtparts) = NULL
+thetimes = chron(dates=dtparts[,1],times=dtparts[,2],format=c('m-d-y','h:m:s'))
+df$year <- cut(thetimes, "year")
+df$month <- months(thetimes)
+df$day <- days(thetimes)
+df$weekend <- is.weekend(thetimes)
+df$weekdays <- weekdays(thetimes)
+df$hour <- hours(thetimes)
+df$time <- mapply(rangeTimeOfDay, hours(thetimes))
 
-## calculate velocity.
+## discretizing velocity.
+df$velocit <- mapply(rangeVelocity, df$velocity)
 
-
-## division of areas.
-
-
-##tentar identificar se é ida ou volta do onibus. se ele ta indo em direção a tal lugar ou o inverso
-# talvez a partir da continuidade da latitude e da longitude
-
-## Select Data
-td <- df[df$velocit != "parado",c("velocit", "CODBAIRRO", "time", "weekdays")]
+## Select columns for generate rules. removing data when the buss was stoped.
+td <- df[df$velocit != "parado",c("velocit", "codbairro", "hour", "weekdays")]
 
 ## Apriori.
-rulesWithParameters <- apriori(td, parameter = list(sup = 0.0005, conf = 0.8))
-rules <- apriori(td)
+rulesWithParameters <- apriori(td, parameter = list(sup = 0.00005, conf = 0.8))
 inspect(rulesWithParameters)
