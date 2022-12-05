@@ -82,15 +82,15 @@ df$month <- months(thetimes)
 df$day <- days(thetimes)
 df$weekend <- is.weekend(thetimes)
 df$weekdays <- weekdays(thetimes)
-df$hour <- hours(thetimes)
+df$hour <- hours(thetimes) %>% as.character()
 df$time <- mapply(rangeTimeOfDay, hours(thetimes))
 
 ## discretizing velocity.
 df$velocit <- mapply(rangeVelocity, df$velocity)
 
 ## Select columns for generate rules. removing data when the buss was stoped.
-td <- df[df$velocit != "parado",c("velocit", "codbairro", "hour", "weekdays")]
+td <- df[df$velocit != "parado",c("velocit", "nome", "hour", "weekdays")]
 
 ## Apriori.
-rulesWithParameters <- apriori(td, parameter = list(sup = 0.00005, conf = 0.8))
-inspect(rulesWithParameters)
+rules <- apriori(td, parameter = list(sup = 0.000000005, conf = 0.60))
+inspect(rules)
