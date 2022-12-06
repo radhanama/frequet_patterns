@@ -23,6 +23,7 @@ if(!require('arulesViz')) {
   install.packages('arulesViz')
   library("arulesViz")
 }
+<<<<<<< HEAD
 if(!require('tidyr')) {
   install.packages('tidyr')
   library("tidyr")
@@ -38,6 +39,10 @@ if(!require('stringr')) {
 if(!require('unglue')) {
   install.packages('unglue')
   library("unglue")
+
+if(!require('janitor')) {
+  install.packages('janitor')
+  library("janitor")
 }
 
 #libs ogasawara version 1.5
