@@ -23,6 +23,10 @@ if(!require('arulesViz')) {
   install.packages('arulesViz')
   library("arulesViz")
 }
+if(!require('janitor')) {
+  install.packages('janitor')
+  library("janitor")
+}
 
 ## function use to set ranges of velocity.
 rangeVelocity <- function(v){
