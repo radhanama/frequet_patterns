@@ -1,10 +1,11 @@
-## import libraries
+## Import libraries
 if(!require('xml2')) {
   install.packages('xml2')
   library('xml2')
 }
 if(!require('arrow')) {
-  install.packages('arrow')
+  source("https://raw.githubusercontent.com/apache/arrow/master/r/R/install-arrow.R")
+  install_arrow()
   library('arrow')
 }
 if(!require('arules')) {
@@ -23,7 +24,6 @@ if(!require('arulesViz')) {
   install.packages('arulesViz')
   library("arulesViz")
 }
-<<<<<<< HEAD
 if(!require('tidyr')) {
   install.packages('tidyr')
   library("tidyr")
@@ -39,17 +39,17 @@ if(!require('stringr')) {
 if(!require('unglue')) {
   install.packages('unglue')
   library("unglue")
-
+}
 if(!require('janitor')) {
   install.packages('janitor')
   library("janitor")
 }
 
-#libs ogasawara version 1.5
+## Libs ogasawara version 1.5
 source("https://raw.githubusercontent.com/eogasawara/mylibrary/master/myBasic.R")
 source("https://raw.githubusercontent.com/eogasawara/mylibrary/master/myPreprocessing.R")
 
-#smoothing functions from ogasawara
+## Smoothing functions from ogasawara
 explore_smoothing <- function(obj, data, attribute) {
   obj <- fit(obj, data)
   sl.bi <- transform(obj, data)
@@ -65,63 +65,23 @@ optimize_smoothing <- function(obj, data, attribute) {
   explore_smoothing(obj, data, attribute)
 }
 
-
-## function use to set ranges of velocity.
-# rangeVelocity <- function(v){
-#   if(v==0){
-#     return("parado")
-#   }else if(0<v && v<20){
-#     return("muito lento")
-#   }else if(20<=v && v<40){
-#     return("lento")
-#   }else if(40<=v && v<60){
-#     return("normal")
-#   }else if(60<=v && v<80){
-#     return("pouco normal")
-#   }else if(80<=v && v<110){
-#     return("rapido")
-#   }else{
-#     return("muito rapido")
-#   }
-# }
-
-## function use to set ranges of time
-rangeTimeOfDay <- function(v){
-  if(5<=v && v<9){
-    return("early morning")
-  }else if(9<=v && v<11){
-    return("mid-morning")
-  }else if(11<=v && v<13){
-    return("late morning")
-  }else if(13<=v && v<17){
-    return("afternoon")
-  }else if(17<=v && v<20){
-    return("early evening")
-  }else if(20<=v && v<23){
-    return("late evening")
-  }else{
-    return("night")
-  }
-}
-
-
 # ## Charge data.
 # diretorio_busdata <- "data"
 # df <- list.files(diretorio_busdata) %>%
 #   enframe(value = "arquivo") %>%
 #   rowwise() %>%
-#   mutate(conteudo = list(str_glue("{diretorio_busdata}/{arquivo}") %>% read_parquet())) %>%
+#   mutate(conteudo = list(str_glue("/{diretorio_busdata}/{arquivo}") %>% read_parquet())) %>%
 #   unnest(conteudo) %>%
 #   janitor::clean_names()
 
 
-# Download File.
+## Download File.
 file_url <- "https://mapmob.eic.cefet-rj.br/data/busdata/database/G1-2022-01-01.parquet"
 tf <- "data.parquet"
 download.file(file_url, destfile =  tf)
 df <- read_parquet(tf)
 
-#range das velocidades usando smoothing
+## Range das velocidades usando smoothing
 rangeVelocity <- explore_smoothing(smoothing_freq(n=20), df$VELOCITY, df$VELOCITY)
 #rangeVelocity <- optimize_smoothing(smoothing_freq(n=20), df$VELOCITY, df$VELOCITY)
 rangeVelocityArray <- names(rangeVelocity)
@@ -141,7 +101,8 @@ discretyzeVelocity <- function(v){
     }else{
       return("muito rapido")
     }
-}
+} 
+
 
 ## Discretizing date and time.
 dtparts = t(as.data.frame(strsplit(df$DATE,' ')))
@@ -152,14 +113,14 @@ df$month <- months(thetimes)
 df$day <- days(thetimes)
 df$weekend <- is.weekend(thetimes)
 df$weekdays <- weekdays(thetimes)
-df$hour <- hours(thetimes) %>% as.character()
-df$time <- mapply(rangeTimeOfDay, hours(thetimes))
 
-## discretizing velocity.
-df$velocit <- mapply(discretyzeVelocity, df$VELOCITY)
+## Discretizing time in 1 hour intervals
+df$timeSlot <- hours(chron(times=dtparts[,2],format=c('h:m:s')) )
+## Discretizing velocity.
+df$velocity <- mapply(discretyzeVelocity, df$VELOCITY)
 
 ## Select columns for generate rules. removing data when the buss was stoped.
-td <- df[df$velocit != "parado",c("velocit", "NOME", "hour", "weekdays")]
+td <- df[df$velocit != "parado",c("velocity", "NOME", "timeSlot", "weekdays")]
 
 ## Apriori.
 rules <- apriori(td, parameter = list(sup = 0.000000005, conf = 0.60))
