@@ -120,3 +120,4 @@ td <- df[df$line == "455.0",c("timeSlot", "weekdays", "velocit", "line","nome")]
 ## Apriori.
 rules <- apriori(td, parameter = list(sup = 0.00000005, conf = 0.60), appearance = list(rhs=c("velocit=normal++","velocit=normal","velocit=muito lento","velocit=lento", "velocit=parado")))
 inspectDT(rules)
+
