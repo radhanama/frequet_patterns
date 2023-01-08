@@ -39,8 +39,8 @@ if(!require('janitor')) {
 }
 
 ## Libs ogasawara version 1.5
-source("https://raw.githubusercontent.com/eogasawara/mylibrary/master/myBasic.R")
-source("https://raw.githubusercontent.com/eogasawara/mylibrary/master/myPreprocessing.R")
+source("https://raw.githubusercontent.com/eogasawara/mylibrary/cd74dc4be718c72a059b3bde0f19b5cf961a2bec/myBasic.R")
+source("https://raw.githubusercontent.com/eogasawara/mylibrary/cd74dc4be718c72a059b3bde0f19b5cf961a2bec/myPreprocessing.R")
 
 ## Smoothing functions from ogasawara
 explore_smoothing <- function(obj, data, attribute) {
