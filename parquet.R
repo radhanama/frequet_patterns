@@ -88,14 +88,13 @@ discretyzeVelocity <- function(v){
     }else if(rangeVelocityArray[3]<v && v<rangeVelocityArray[4]){
       return("normal")
     }else if(rangeVelocityArray[4]<v && v<rangeVelocityArray[5]){
-      return("normal++")
-    }else if(rangeVelocityArray[5]<v && v<rangeVelocityArray[]){
       return("rapido")
-    }else{
+    }else if(rangeVelocityArray[5]<v && v<rangeVelocityArray[]){
       return("muito rapido")
+    }else{
+      return("muito rapido++")
     }
-  
-} 
+}
 
 
 ## Discretizing date and time.
@@ -113,11 +112,23 @@ df$timeSlot <- as.character(hours(thetimes))
 
 ## Discretizing velocity.
 df$velocit <- mapply(discretyzeVelocity, df$velocity)
-
+lines <- c("363.0", "383.0", "353.0", "239.0", "249.0", "457.0", "247.0", "621.0", "627.0", "629.0", "455.0", "711.0")
 ## Select columns for generate rules. removing data when the buss was stoped.
-td <- df[df$line == "455.0",c("timeSlot", "weekdays", "velocit", "line","nome")]
+td <- df[df$line %in% lines,c("timeSlot", "weekdays", "velocit","nome")]
 
 ## Apriori.
-rules <- apriori(td, parameter = list(sup = 0.00000005, conf = 0.60), appearance = list(rhs=c("velocit=normal++","velocit=normal","velocit=muito lento","velocit=lento", "velocit=parado")))
+rules <- apriori(
+  td,
+  parameter = list(
+    sup = 0.000005,
+    conf = 0.60,
+    minlen = 4),
+  appearance = list(
+    rhs=c(
+      "velocit=rapido",
+      "velocit=normal",
+      "velocit=muito lento",
+      "velocit=lento",
+      "velocit=parado")))
 inspectDT(rules)
 
