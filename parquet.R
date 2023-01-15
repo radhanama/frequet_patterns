@@ -1,22 +1,12 @@
-## Import libraries
+## Import and downloading libraries
 if(!require('xml2')) {
   install.packages('xml2')
   library('xml2')
 }
-
-library('arrow')
-
-library('arules')
-
-library('chron')
-
 if(!require('dplyr')) {
   install.packages('dplyr')
   library("dplyr")
 }
-
-library("arulesViz")
-
 if(!require('tidyr')) {
   install.packages('tidyr')
   library("tidyr")
@@ -38,6 +28,14 @@ if(!require('janitor')) {
   library("janitor")
 }
 
+library('arrow')
+
+library('arules')
+
+library('chron')
+
+library("arulesViz")
+
 ## Libs ogasawara version 1.5
 source("https://raw.githubusercontent.com/eogasawara/mylibrary/cd74dc4be718c72a059b3bde0f19b5cf961a2bec/myBasic.R")
 source("https://raw.githubusercontent.com/eogasawara/mylibrary/cd74dc4be718c72a059b3bde0f19b5cf961a2bec/myPreprocessing.R")
@@ -53,12 +51,8 @@ explore_smoothing <- function(obj, data, attribute) {
   return(table(sl.bi))
 }
 
-optimize_smoothing <- function(obj, data, attribute) {
-  obj <- optimize(obj, data, do_plot=TRUE)
-  explore_smoothing(obj, data, attribute)
-}
 
-## Charge data.
+## Charge the data of all files that we downloaded priviously in the download_parquet.py.
 diretorio_busdata <- "data"
 df <- list.files(diretorio_busdata) %>%
   enframe(value = "arquivo") %>%
@@ -70,14 +64,13 @@ df <- list.files(diretorio_busdata) %>%
 
 ## Range das velocidades usando smoothing
 rangeVelocityTable <- explore_smoothing(smoothing_freq(n=8), df$velocity, df$velocity)
-#rangeVelocity <- optimize_smoothing(smoothing_freq(n=8), df$VELOCITY, df$VELOCITY)
-# rangeVelocityArray <- as.integer(names(rangeVelocity))
-# plot da velocidade
+rangeVelocityArray <- as.integer(names(rangeVelocityTable))
+
+## plot da velocidade
 # options(scipen=999)
 # barplot(rangeVelocityArray)
 
 # conversão do range de velocidade para números para discretizar
-rangeVelocityArray <- as.integer(names(rangeVelocityTable))
 discretyzeVelocity <- function(v){
     if(v==0){
       return("parado")
@@ -97,14 +90,12 @@ discretyzeVelocity <- function(v){
 }
 
 
-## Discretizing date and time.
+## transforming the data of time in a object of datetime to extract features.
 dtparts = t(as.data.frame(strsplit(df$date,' ')))
 row.names(dtparts) = NULL
 thetimes = chron(dates=dtparts[,1],times=dtparts[,2],format=c('m-d-y','h:m:s'))
-df$year <- cut(thetimes, "year")
-df$month <- months(thetimes)
-df$day <- days(thetimes)
-df$weekend <- is.weekend(thetimes)
+
+## spliting for day of the week.
 df$weekdays <- weekdays(thetimes)
 
 ## Discretizing time in 1 hour intervals
@@ -112,11 +103,14 @@ df$timeSlot <- as.character(hours(thetimes))
 
 ## Discretizing velocity.
 df$velocit <- mapply(discretyzeVelocity, df$velocity)
+
+##lines to be analized.
 lines <- c("363.0", "383.0", "353.0", "239.0", "249.0", "457.0", "247.0", "621.0", "627.0", "629.0", "455.0", "711.0")
+
 ## Select columns for generate rules. removing data when the buss was stoped.
 td <- df[df$line %in% lines,c("timeSlot", "weekdays", "velocit","nome")]
 
-## Apriori.
+## Apriori com o lado direito fixado como as velocidades.
 rules <- apriori(
   td,
   parameter = list(
@@ -130,5 +124,7 @@ rules <- apriori(
       "velocit=muito lento",
       "velocit=lento",
       "velocit=parado")))
+
+## function that generate a html for analize the rules created by apriori.
 inspectDT(rules)
 
